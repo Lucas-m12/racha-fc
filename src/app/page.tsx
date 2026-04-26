@@ -19,7 +19,11 @@ export default async function Home() {
   const finance = computeFinance(transactions);
   const admin = await isAdmin();
 
-  const proxima = matches.find((m) => m.status === "agendada") ?? null;
+  // matches comes desc — the closest future agendada is the LAST one in date order.
+  const proxima =
+    matches
+      .filter((m) => m.status === "agendada")
+      .sort((a, b) => a.data.localeCompare(b.data))[0] ?? null;
   const finalizadas = matches.filter((m) => m.status === "finalizada");
   const recentes = finalizadas.slice(0, 3);
 

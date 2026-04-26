@@ -12,7 +12,10 @@ export default async function Partidas() {
   const { players, matches, votes, settings } = await getAll();
   const statsMap = buildStatsMap(players, matches, votes);
   const admin = await isAdmin();
-  const proxima = matches.find((m) => m.status === "agendada") ?? null;
+  const proxima =
+    matches
+      .filter((m) => m.status === "agendada")
+      .sort((a, b) => a.data.localeCompare(b.data))[0] ?? null;
   const finalizadas = matches.filter((m) => m.status === "finalizada");
 
   return (
