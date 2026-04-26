@@ -1,17 +1,34 @@
 /**
- * Seed script — run with: bun run db:seed
- * Maps the prototype's string ids (p1, m-1, v1, t1) to DB UUIDs on insert.
+ * Seed script — run with: pnpm db:seed
+ *
+ * SAFETY: refuses to run if the players table already has rows. Override
+ * only if you know what you're doing: FORCE=1 pnpm db:seed (wipes data).
  */
 import "dotenv/config";
 import { db, schema } from "./index";
+import { sql } from "drizzle-orm";
 import {
   SEED_PLAYERS, SEED_MATCHES, SEED_VOTES, SEED_TRANSACTIONS, SEED_SETTINGS,
 } from "./seed-data";
 
 async function main() {
-  console.log("seeding…");
+  const force = process.env.FORCE === "1";
 
-  // Wipe in reverse FK order
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(schema.players);
+
+  if (count > 0 && !force) {
+    console.error(
+      `✗ refusing to seed: players table has ${count} row(s).\n` +
+      `  if you really want to wipe and reseed, run: FORCE=1 pnpm db:seed`,
+    );
+    process.exit(2);
+  }
+
+  console.log(force ? "FORCE seeding (wiping existing data)…" : "seeding empty database…");
+
+  // Wipe in reverse FK order (only reachable when empty or FORCE=1)
   await db.delete(schema.votes);
   await db.delete(schema.transactions);
   await db.delete(schema.matchPlayers);
